@@ -11,14 +11,17 @@ sign_url = 'https://n.cg.163.com/api/v2/sign-today'
 current = 'https://n.cg.163.com/api/v2/client-settings/@current'
 
 
-cookies = sys.argv[1].split('#')
-teleid = sys.argv[2]
-teletoken = sys.argv[3]
-sckey = sys.argv[4]
-qqkey = sys.argv[5]
-ppkey = sys.argv[6]
+# Cookie/Authorization 值常因复制粘贴带上首尾空白或换行，
+# 直接放进 HTTP header 会让 requests 抛 InvalidHeader。这里统一清洗。
+_raw = sys.argv[1].replace('\r', '').replace('\n', '')
+cookies = [c.strip() for c in _raw.split('#') if c.strip()]
+teleid = sys.argv[2].strip()
+teletoken = sys.argv[3].strip()
+sckey = sys.argv[4].strip()
+qqkey = sys.argv[5].strip()
+ppkey = sys.argv[6].strip()
 
-if cookies == "" or cookies == []:
+if not cookies:
     print('[网易云游戏自动签到]未设置cookie，正在退出……')
     sys.exit()
 if teleid != "" and teletoken != "":
