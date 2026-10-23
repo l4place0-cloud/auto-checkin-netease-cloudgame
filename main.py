@@ -131,33 +131,44 @@ if __name__ == "__main__":
         me = None
         try:
             me = getme(current, cookie)
-        except:
-            message = '第{}个账号验证失败！请检查Cookie是否过期！或者附上报错信息到 https://github.com/GamerNoTitle/wyycg-autosignin/issues 发起issue'.format(
-                cookies.index(i) + 1)
+        except Exception as e:
+            message = '第{}个账号验证失败！请求异常：{}: {}。请检查Cookie是否过期！'.format(
+                cookies.index(i) + 1, type(e).__name__, e)
             failure.append(cookie)
             msg.append(message)
             autherror = True
 
-        if me.status_code != 200 and not autherror:
-            message = '第{}个账号验证失败！请检查Cookie是否过期！或者附上报错信息到 https://github.com/GamerNoTitle/wyycg-autosignin/issues 发起issue'.format(
+        if autherror:
+            continue
+
+        if me is None:
+            message = '第{}个账号验证失败！请求无返回。请检查Cookie是否过期！'.format(
                 cookies.index(i) + 1)
+            failure.append(cookie)
+            msg.append(message)
+        elif me.status_code != 200:
+            message = '第{}个账号验证失败！HTTP {}，回显：{}。请检查Cookie是否过期！'.format(
+                cookies.index(i) + 1, me.status_code, me.text[:200])
             failure.append(cookie)
             msg.append(message)
         elif me.status_code == 200:
             try:
                 sign_return = signin(sign_url, cookie)
-            except:
-                message = '第{}个账号签到失败，回显状态码为{}，具体错误信息如下：{}'.format(cookies.index(i) + 1, sign_return.status_code, sign_return.text)
+            except Exception as e:
+                message = '第{}个账号签到失败，请求异常：{}: {}'.format(
+                    cookies.index(i) + 1, type(e).__name__, e)
                 failure.append(cookie)
                 msg.append(message)
                 signerror = True
 
-            if sign_return.status_code == 200:
+            if signerror or sign_return is None:
+                pass
+            elif sign_return.status_code == 200:
                 message = '第{}个账号签到成功！'.format(cookies.index(i) + 1)
                 success.append(cookie)
                 msg.append(message)
-            elif not signerror:
-                message = '第{}个账号签到失败，回显状态码为{}，具体错误信息如下：{}'.format(cookies.index(i) + 1, sign_return.status_code, sign_return.text)
+            else:
+                message = '第{}个账号签到失败，回显状态码为{}，具体错误信息如下：{}'.format(cookies.index(i) + 1, sign_return.status_code, sign_return.text[:200])
                 failure.append(cookie)
                 msg.append(message)
     outputmsg = str(msg).replace("[", '').replace(']', '').replace(',', '\n').replace('\'', '')
