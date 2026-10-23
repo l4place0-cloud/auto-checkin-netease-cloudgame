@@ -125,6 +125,7 @@ if __name__ == "__main__":
     print('检测到{}个账号，即将开始签到！'.format(len(cookies)))
     success = []
     failure = []
+    already = []
     msg = []
     for i in cookies:
         cookie = i
@@ -170,6 +171,12 @@ if __name__ == "__main__":
                 message = '第{}个账号签到成功！'.format(cookies.index(i) + 1)
                 success.append(cookie)
                 msg.append(message)
+            elif sign_return.status_code == 400:
+                # 上游 README Q&A：400 只在「当天已经签到过」时出现，属于正常状态，
+                # 不能算失败，否则同一天重复运行会让 CI 误报红。
+                message = '第{}个账号今天已经签到过了，无需重复签到。'.format(cookies.index(i) + 1)
+                already.append(cookie)
+                msg.append(message)
             else:
                 message = '第{}个账号签到失败，回显状态码为{}，具体错误信息如下：{}'.format(cookies.index(i) + 1, sign_return.status_code, sign_return.text[:200])
                 failure.append(cookie)
@@ -180,41 +187,45 @@ if __name__ == "__main__":
     今日签到结果如下：
     成功数量：{0}/{2}
     失败数量：{1}/{2}
+    已签到数量：{4}/{2}
     具体情况如下：
     {3}
     GamerNoTitle: https://bili33.top
     网易云游戏自动签到脚本: https://github.com/GamerNoTitle/wyycg-autocheckin
-    '''.format(len(success), len(failure), len(cookies), outputmsg)
+    '''.format(len(success), len(failure), len(cookies), outputmsg, len(already))
     scinfomsg = '''
     感谢使用来自GamerNoTitle的网易云游戏自动签到脚本！
     今日签到结果如下：
     成功数量：{0}/{2}
     失败数量：{1}/{2}
+    已签到数量：{4}/{2}
     具体情况如下：
     {3}
     GamerNoTitle: https://bili33.top
     网易云游戏自动签到脚本: https://github.com/GamerNoTitle/wyycg-autocheckin
-    '''.format(len(success), len(failure), len(cookies), outputmsg)
+    '''.format(len(success), len(failure), len(cookies), outputmsg, len(already))
     qqinfomsg = '''
     感谢使用来自bili33.top GamerNoTitle的网易云游戏自动签到脚本
     今日签到结果如下：
     成功数量：{0}/{2}
     失败数量：{1}/{2}
+    已签到数量：{4}/{2}
     具体情况如下：
     {3}
     GamerNoTitle: https://bili33.top
     网易云游戏自动签到脚本: https://github.com/GamerNoTitle/wyycg-autocheckin
-    '''.format(len(success), len(failure), len(cookies), outputmsg)
+    '''.format(len(success), len(failure), len(cookies), outputmsg, len(already))
     ppinfomsg = '''
     感谢使用来自bili33.top GamerNoTitle的网易云游戏自动签到脚本
     今日签到结果如下：
     成功数量：{0}/{2}
     失败数量：{1}/{2}
+    已签到数量：{4}/{2}
     具体情况如下：
     {3}
     GamerNoTitle: https://bili33.top
     网易云游戏自动签到脚本: https://github.com/GamerNoTitle/wyycg-autocheckin
-    '''.format(len(success), len(failure), len(cookies), outputmsg)
+    '''.format(len(success), len(failure), len(cookies), outputmsg, len(already))
 
     print(teleinfomsg)
     if (len(failure) != 0):
@@ -224,5 +235,8 @@ if __name__ == "__main__":
         qqsend(qqkey, qqinfomsg)
         ppsend(ppkey, ppinfomsg)
         raise ScriptRunError
+    elif (len(already) != 0):
+        # 今天已经签过：不是故障，正常退出，不推送、不报红
+        print('所有账号今天均已签到，无需重复签到，正常结束。')
     else:
         print('所有账号签到成功，无需发送通知')
